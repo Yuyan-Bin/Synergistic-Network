@@ -3,7 +3,7 @@
 
 ## 1. Synapse data and Model weights
 - Get Synapse data, model weights of our model on the Synapse dataset and biformer_base_best.pth. ( https://drive.google.com/file/d/15Twkxj1Rv9J8YLCvXVBtRDPn8XAUVNWK/view?usp=sharing). I hope this will help you to reproduce the results.
-- We used a dataset from the MICCAI 2015 Multi-Site CT Annotation Challenge\cite{Landman2015SynapseMULAB}, including 30 abdominal CT scans and 3,779 axial abdominal clinical CT images. We divided the dataset into two parts: the training set and the test set. The training set contains 18 samples with a total of 2,212 axial slices. We use these slices to train the model to learn the features of different organs. In contrast, the test set consists of the remaining 12 samples, designed to provide an independent platform for objectively evaluating the model performance.
+- We used a dataset from the MICCAI 2015 Multi-Site CT Annotation Challenge, including 30 abdominal CT scans and 3,779 axial abdominal clinical CT images. We divided the dataset into two parts: the training set and the test set. The training set contains 18 samples with a total of 2,212 axial slices. We use these slices to train the model to learn the features of different organs. In contrast, the test set consists of the remaining 12 samples, designed to provide an independent platform for objectively evaluating the model performance.
 ## 2. Environment
 - Please prepare an environment with python=3.10, and then use the command "pip install -r requirements.txt" for the dependencies.
 ## 3. Synapse Train/Test
@@ -18,7 +18,7 @@ python test.py --dataset Synapse --is_savenii --volume_path your DATA_DIR --outp
 ```
 ## 4. Other databases
 For training and testing on other datasets, please refer to the corresponding README.txt.
-- ISIC-2018 Challenge Dataset (https://paperswithcode.com/dataset/isic-2018-task-1)
+- ISIC-2018 Challenge Dataset (https://challenge.isic-archive.com/data/#2018)
 The dataset consists of 2,594 dermoscopic images with real segmentation annotations. We used a five-fold cross-validation method based on the validation results and selected the best-performing model for the final prediction analysis.
 - CVC-ClinicDB (https://www.dropbox.com/s/p5qe9eotetjnbmq/CVC-ClinicDB.rar?dl=0)
 It served as the training dataset for the MICCAI 2015 Automated Polyp Detection Challenge. This dataset contains 612 images divided into three subsets: 490 for model training, 61 for performance validation, and 61 for final accuracy testing. The random assignment ensures unbiased evaluation of the model's performance.

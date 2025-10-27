@@ -3,7 +3,6 @@ from skimage import io
 import numpy as np
 from torch.utils.data import Dataset
 import albumentations as A
-# from albumentations.pytorch import ToTensor
 from albumentations.pytorch.transforms import ToTensor
 
 def Normalization():
@@ -24,11 +23,8 @@ class binary_class(Dataset):
         
         def __getitem__(self,idx):
             np.set_printoptions(threshold=np.inf)
-            # t = str(self.folders[idx])
             image_path = os.path.join(self.path,'images/',self.folders[idx])
             mask_path = os.path.join(self.path,'masks/',self.folders[idx])
-            # image_path = os.path.join(self.path,'images/',t)+".png"
-            # mask_path = os.path.join(self.path,'masks/',t)+".png"
             
             img = io.imread(image_path)[:,:,:3].astype('float32')
             mask = io.imread(mask_path,as_gray=True)
@@ -54,10 +50,7 @@ class binary_class2(Dataset):
             image_path = os.path.join(self.path,self.folders[idx],'images/',self.folders[idx])
             mask_path = os.path.join(self.path,self.folders[idx],'masks/',self.folders[idx])
             image_id = self.folders[idx]
-            # img = io.imread(f'{image_path}.png')[:,:,:3].astype('float32')
-            # img = io.imread(f'{image_path}.jpg')[:,:,:3].astype('float32')
             img = io.imread(f'{image_path}.tif')[:,:,:3].astype('float32')
-            # mask = io.imread(f'{mask_path}.png', as_gray=True)
             mask = io.imread(f'{mask_path}.tif', as_gray=True)
 
             augmented = self.transforms(image=img, mask=mask)

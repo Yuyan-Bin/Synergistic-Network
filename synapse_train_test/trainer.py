@@ -72,8 +72,6 @@ def trainer_synapse(args, model, snapshot_path):
     global eta_min, T_mult
     os.makedirs(os.path.join(snapshot_path, 'test'), exist_ok=True)
     test_save_path = os.path.join(snapshot_path, 'test')
-    # logging.basicConfig(filename=snapshot_path + "/log.txt", level=logging.INFO,
-    #                     format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
     logging.basicConfig(filename=f"{snapshot_path}/log_batch_{args.batch_size}.txt", level=logging.INFO,
                         format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
@@ -94,8 +92,6 @@ def trainer_synapse(args, model, snapshot_path):
         random.seed(args.seed + worker_id)
     trainloader = DataLoader(db_train, batch_size=batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True,
                              worker_init_fn=worker_init_fn)
-    # trainloader = DataLoader(db_train, batch_size=batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True,
-    #                          worker_init_fn=worker_init_fn,drop_last=True)
     db_test = Synapse_dataset(base_dir=args.test_path, split="test_vol", list_dir=args.list_dir, img_size=args.img_size)
     testloader = DataLoader(db_test, batch_size=1, shuffle=False, num_workers=1)
     if args.n_gpu > 1:
@@ -103,7 +99,6 @@ def trainer_synapse(args, model, snapshot_path):
     model.train()
     ce_loss = CrossEntropyLoss()
     dice_loss = DiceLoss(num_classes)
-#     optimizer = optim.SGD(model.parameters(), lr)
     optimizer = optim.AdamW(model.parameters(),lr = 0.001,betas = (0.9,0.999),eps = 1e-8 ,weight_decay = 1e-2 ,amsgrad = False)
     writer = SummaryWriter(snapshot_path + '/log')
     iter_num = 0
@@ -116,14 +111,10 @@ def trainer_synapse(args, model, snapshot_path):
     iterator = tqdm(range(max_epoch), ncols=70)
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0= 50, T_mult=2, eta_min=1e-6,last_epoch = -1 )
     multi_list = []
-    # ****************************************************************************************
     train_loss = []
     epoch_train_losses = []
-    # ****************************************************************************************
     for epoch_num in iterator:
-        # ***********************************************
         total_loss = 0.0
-        # ***********************************************
         for i_batch, sampled_batch in enumerate(trainloader):
             image_batch, label_batch = sampled_batch['image'], sampled_batch['label']
             image_batch, label_batch = image_batch.cuda(), label_batch.squeeze(1).cuda()
@@ -134,18 +125,11 @@ def trainer_synapse(args, model, snapshot_path):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            # lr_ = base_lr * (1.0 - iter_num / max_iterations) ** 0.9
-            # for param_group in optimizer.param_groups:
-            #     param_group['lr'] = lr_
-            # 更新学习率
             scheduler.step()
-            # 打印当前的学习率
-            if (i_batch + 1) % 100 == 0:  # 每 100 个 batch 打印一次学习率
+            if (i_batch + 1) % 100 == 0:  
                 current_lr = scheduler.get_last_lr()[0]
                 print(f'Epoch {epoch_num + 1}, Batch {i_batch + 1}, Learning Rate: {current_lr}')
-            # *************************************************************************
             total_loss += loss.item()
-            # **************************************************************************
             iter_num = iter_num + 1
             # writer.add_scalar('info/lr', lr_, iter_num)
             writer.add_scalar('info/total_loss', loss, iter_num)
@@ -155,24 +139,15 @@ def trainer_synapse(args, model, snapshot_path):
 
 
 
-        # 计算每个 epoch 的平均损失
+        # Calculate the Average Loss per Epoch
         rounded_total_loss = round(total_loss / (i_batch + 1), 4)
         epoch_train_losses.append(rounded_total_loss)
-        # 打印当前 epoch 的平均损失
-        # print(f'Epoch {epoch_num + 1} - Average Loss: {rounded_total_loss}')
         writer.add_scalar('info/average_loss', rounded_total_loss, epoch_num)
-        # 将平均误差加入日志记录中
         logging.info('Epoch %d - Average Loss: %f', epoch_num + 1, rounded_total_loss)
-        # ****************************************************************************
         # Test
         eval_interval = args.eval_interval
-        # if epoch_num >= int((max_epoch) / 2) and (epoch_num + 1) % eval_interval == 0:
-
         current_time = datetime.now()
         formatted_time = current_time.strftime('%Y%m%d_%H%M')
-        # if epoch_num >= int((max_epoch) / 2) and (epoch_num + 1) % eval_interval == 0:
-        # if epoch_num >= 249 and (epoch_num + 1) % eval_interval == 0:
-        # if epoch_num >= 249 and epoch_num <= 280:
         if epoch_num >= 249 and (epoch_num + 1) % 5 == 0 and epoch_num < 280:
             filename = f'{args.model_name}_epoch_{epoch_num}_bs_{args.batch_size}_{formatted_time}.pth'
             save_mode_path = os.path.join(snapshot_path, filename)
@@ -180,8 +155,7 @@ def trainer_synapse(args, model, snapshot_path):
             logging.info("save model to {}".format(save_mode_path))
             logging.info("*" * 20)
 
-# ******************************************************************************************
-    # 绘制并保存训练损失曲线
+    # Plot and save the training loss curve.
     plt.figure(figsize=(10, 5))
     plt.plot(epoch_train_losses, label='Training Loss')
     plt.title('Training Loss over Epochs')
@@ -192,6 +166,5 @@ def trainer_synapse(args, model, snapshot_path):
     plt.savefig(os.path.join(snapshot_path, 'training_loss.png'))
     plt.show()
     plt.close()
-    # ************************************************************************
     writer.close()
     return "Training Finished!"

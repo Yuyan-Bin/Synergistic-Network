@@ -23,7 +23,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import matplotlib
-matplotlib.use('Agg')  # 在导入 pyplot 之前设置后端
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 from datasets.dataset_synapse import Synapse_dataset
 from networks.bra_unet import BRAUnet
@@ -36,7 +36,6 @@ draw = 'true'
 parser.add_argument(
     "--volume_path",
     type=str,
-    # default="/home/cqut/Data/medical_seg_data/Synapse_zheng",
     default="/tmp/pycharm_project_794/BRAU-Netplusplus-master/synapse_train_test/data/Synapse",
     help="root dir for validation volume data",
 )  # for acdc volume_path=root_dir
@@ -49,14 +48,10 @@ parser.add_argument("--max_epochs", type=int, default=280, help="maximum epoch n
 parser.add_argument("--batch_size", type=int, default=24, help="batch_size per gpu")
 parser.add_argument("--img_size", type=int, default=224, help="input patch size of network input")
 parser.add_argument("--is_savenii", action="store_true",default=True,help="whether to save results during inference")
-# ****************************************更改路**********************************************
 parser.add_argument("--test_save_dir", type=str, default="../predictions", help="saving prediction as nii!")
-# parser.add_argument("--test_save_dir", tyype=str, default=None, help="saving prediction as nii!")
-# ****************************************************************************************************************************
 parser.add_argument("--deterministic", type=int, default=1, help="whether use deterministic training")
 parser.add_argument("--base_lr", type=float, default=0.05, help="segmentation network learning rate")
 parser.add_argument("--seed", type=int, default=1234, help="random seed")
-# parser.add_argument('--cfg', type=str, required=True, metavar="FILE", help='path to config file', )
 parser.add_argument(
     "--opts",
     help="Modify config options by adding 'KEY VALUE' pairs. ",
@@ -94,17 +89,15 @@ if args.dataset == "Synapse":
     args.volume_path = os.path.join(args.volume_path, "test_vol_h5")
 # config = get_config(args)
 #
-# # *******************绘图******************************************************
+# Plot a graph.
 def save_figure(fig, filename, folder=args.test_save_dir):
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
     filepath = os.path.join(folder, filename)
-    absolute_filepath = os.path.abspath(filepath)  # 获取绝对路径
+    absolute_filepath = os.path.abspath(filepath)  
     fig.savefig(filepath)
     plt.close(fig)
-    print(f"Figure saved to {absolute_filepath}")  # 打印绝对路径
-    # 检查文件是否真的被创建
-    # 检查文件是否真的被创建
+    print(f"Figure saved to {absolute_filepath}")  
     if os.path.isfile(absolute_filepath):
         print(f"File exists and was saved successfully at {absolute_filepath}.")
     else:
@@ -112,7 +105,7 @@ def save_figure(fig, filename, folder=args.test_save_dir):
 
 
 def label2color(label, colormap):
-    """将标签图转换为彩色图像"""
+    """Convert the label map to a color image."""
     norm = Normalize(vmin=0, vmax=colormap.N)
     return colormap(norm(label))
 
@@ -127,37 +120,34 @@ def plot_images(original, predicted, label, title="Image Comparison", color_spac
         label = label.squeeze().cpu().numpy()
 
     colors = [(0, 0, 0),  # Background
-              (255, 0, 0),  # Class 1 蓝色改红色
-              (0, 255, 0),  # Class 2 绿色 T
-              (100, 0, 255),  # Class 3 红色改紫色
-              (0, 255, 255),  # Class 4 青蓝色 T
-              (255, 52, 255),  # Class 5 玫红 T
-              (255, 255, 0),  # Class 6 黄色 T
-              (255, 239, 213),  # Class 7 浅黄色替代浅蓝色
-              (0, 0, 215)]  # Class 8 深蓝替代灰色
+              (255, 0, 0),  # Class 1 
+              (0, 255, 0),  # Class 2 
+              (100, 0, 255),  # Class 3 
+              (0, 255, 255),  # Class 4 
+              (255, 52, 255),  # Class 5 
+              (255, 255, 0),  # Class 6
+              (255, 239, 213),  # Class 7 
+              (0, 0, 215)]  # Class 8 
 
-    # 将颜色从 [0, 255] 范围转换到 [0, 1] 范围
+    # Normalize the color values from the range [0, 255] to [0, 1].
     colors_normalized = np.array(colors) / 255.0
     colormap = ListedColormap(colors_normalized)
 
     def create_rgba(image_colored, alpha_value=0.5, color_space='sRGB'):
-        """创建带有透明度通道的RGBA图像"""
-        # 创建 alpha 通道，黑色部分设置为透明
+        """Create an RGBA image with an alpha (transparency) channel."""
         alpha_channel = np.full(image_colored.shape[:2], alpha_value, dtype=np.float32)
         black_pixels = np.all(image_colored == [0, 0, 0], axis=-1)
         alpha_channel[black_pixels] = 0
 
-        # 根据选定的色彩空间调整颜色
         if color_space.lower() == 'adobe rgb':
             image_colored = rgb2adobergb(image_colored)
         elif color_space.lower() == 'prophoto rgb':
             image_colored = rgb2prophoto(image_colored)
-        else:  # 默认使用 sRGB
+        else:  
             image_colored = rgb2srgb(image_colored)
 
         return np.dstack((image_colored, alpha_channel))
 
-    # 如果label是二维的，那么不需要遍历切片
     if label.ndim == 2:
         if np.any(label > 0):
             label_colored = label2color(label, colormap)
@@ -165,19 +155,17 @@ def plot_images(original, predicted, label, title="Image Comparison", color_spac
 
             fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-            # 显示原图像
             axes[0].imshow(original, cmap='gray')
             axes[0].set_title("Original")
             axes[0].axis('off')
 
-            # 处理预测图像
+            # To process a predicted image 
             predict_colored_rgba = create_rgba(predict_colored, color_space=color_space)
             axes[1].imshow(original, cmap='gray')
             axes[1].imshow(predict_colored_rgba)
             axes[1].set_title("Predicted")
             axes[1].axis('off')
 
-            # 处理标签图像
             label_colored_rgba = create_rgba(label_colored, color_space=color_space)
             axes[2].imshow(original, cmap='gray')
             axes[2].imshow(label_colored_rgba)
@@ -188,7 +176,6 @@ def plot_images(original, predicted, label, title="Image Comparison", color_spac
             save_figure(fig, f"{title}_{color_space}.png")
 
     else:
-        # 如果label是三维的，遍历每个切片
         for i in range(label.shape[0]):
             if np.any(label[i, :, :] > 0):
                 original_slice = original[i, :, :] if original.ndim == 3 else original
@@ -245,7 +232,6 @@ def inference(args, model, test_save_path=None, color_space='sRGB'):
         # if draw == 'true':
         #     print("draw:true;")
         #     plot_images(image, predicted, label, title=case_name, color_space=color_space)
-        # 测试图片尺寸
         patch_size = [args.img_size, args.img_size]
         print(f"Patch size for testing: {patch_size}")
 
@@ -276,10 +262,8 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-    # ***********************************************************************************************************
     new_directory = "/tmp/pycharm_project_794/BRAU-Netplusplus-master/synapse_train_test"
 
-    # 尝试切换目录
     try:
         os.chdir(new_directory)
         print(f"Changed working directory to: {os.getcwd()}")
@@ -287,7 +271,6 @@ if __name__ == "__main__":
         print(f"Error: The directory '{new_directory}' does not exist.")
     except PermissionError:
         print(f"Error: Permission denied to change to directory '{new_directory}'.")
-    # *********************************************************************************************************
 
     dataset_config = {
         "Synapse": {
@@ -302,10 +285,7 @@ if __name__ == "__main__":
 
     net = BRAUnet(img_size=224,in_chans=3, num_classes=9, n_win=7).cuda(0)
 
-    # snapshot = os.path.join(args.output_dir, "best_model.pth")
     snapshot = os.path.join(args.output_dir, "best_model.pth")
-    # if not os.path.exists(snapshot):
-    #     snapshot = snapshot.replace("best_model", "synapse_epoch_299")
     if not os.path.exists(snapshot):
         snapshot = snapshot.replace("best_model", "synapse_epoch_249_bs_24_20250415_1637")
     msg = net.load_state_dict(torch.load(snapshot),strict=False)

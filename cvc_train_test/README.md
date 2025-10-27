@@ -3,13 +3,13 @@ To apply the model on a custom dataset, the data tree should be constructed as:
 ``` 
     ├── data
           ├── images
-                ├── image_1.png
-                ├── image_2.png
-                ├── image_n.png
+                ├── image_1.tif
+                ├── image_2.tif
+                ├── image_n.tif
           ├── masks
-                ├── image_1.png
-                ├── image_2.png
-                ├── image_n.png
+                ├── image_1.tif
+                ├── image_2.tif
+                ├── image_n.tif
 ```
 ## CSV generation 
 ```

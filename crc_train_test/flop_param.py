@@ -10,7 +10,6 @@ from thop import profile
 import torch
 net = BRAUnet(img_size=224, in_chans=3, num_classes=1, n_win=7)
 net.load_from()
-# randn_input = torch.randn(1, 3, 256, 256)
 randn_input = torch.randn(1, 3, 224, 224)
 flops, params = profile(net, inputs=(randn_input, ))
 print('FLOPs = ' + str(flops/1000**3) + 'G')

@@ -1,10 +1,9 @@
 import os
-
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
 from einops import rearrange
-from networks.bra_block import Block  #biformer解码器
+from networks.bra_block import Block  
 
 class PatchExpand(nn.Module):
     def __init__(self, input_resolution, dim, dim_scale=2, norm_layer=nn.LayerNorm):
@@ -85,7 +84,6 @@ class BasicLayer_up(nn.Module):
         self.input_resolution = input_resolution
         self.depth = depth
         self.use_checkpoint = use_checkpoint
-        # stochastic depth 随机深度衰减规则
         dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum([depth]))]
         cur = 0
         # build blocks

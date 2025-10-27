@@ -78,8 +78,6 @@ class Synapse_dataset(Dataset):
         self.norm_x_transform = norm_x_transform
         self.norm_y_transform = norm_y_transform
         self.split = split
-        # 打印当前工作目录
-        # print(f"Current working directory: {os.getcwd()}")
 
         self.sample_list = open(os.path.join(list_dir, self.split+'.txt')).readlines()
         self.data_dir = base_dir
@@ -109,9 +107,6 @@ class Synapse_dataset(Dataset):
             data_path = os.path.join(self.data_dir, slice_name+'.npz')
             data = np.load(data_path)
             image, label = data['image'], data['label']
-            # print("self.split == train")
-            # print(f"Original image shape (before any processing): {image.shape}")
-            # print(f"Original label shape (before any processing): {label.shape}")
             image,label = augment_seg(self.img_aug, image, label)
             x, y = image.shape
             if x != self.img_size or y != self.img_size:
@@ -124,9 +119,7 @@ class Synapse_dataset(Dataset):
             data = h5py.File(filepath)
             image, label = data['image'][:], data['label'][:]
         
-            # 打印原始数据的维度形状
-            # print(f"Original image shape (before any processing2): {image.shape}")
-            # print(f"Original label shape (before any processing2): {label.shape}")
+          
 
         sample = {'image': image, 'label': label}
         if self.norm_x_transform is not None:

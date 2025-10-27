@@ -47,12 +47,8 @@ class DiceLoss(nn.Module):
             loss += dice * weight[i]
         return loss / self.n_classes
 def calculate_metric_percase(pred, gt):
-    # ************************************************************************************
-    # 确保 pred 和 gt 的形状一致
     if pred.shape != gt.shape:
-
         gt = zoom(gt, (pred.shape[0] / gt.shape[0], pred.shape[1] / gt.shape[1]), order=0)
-    # ************************************************************************************
     pred[pred > 0] = 1
     gt[gt > 0] = 1
     if pred.sum() > 0 and gt.sum()>0:
@@ -64,60 +60,43 @@ def calculate_metric_percase(pred, gt):
     else:
         return 0, 0
 def test_single_volume(image, label, net, classes, patch_size=[256, 256], test_save_path=None, case=None, z_spacing=1):
-    image, label = image.squeeze(0).cpu().detach().numpy(), label.squeeze(0).cpu().detach().numpy() #squeeze(0) 会移除第一个维度（批量维度）
-    # print("original image.shape:",image.shape)
-    # print("original label.shape:", label.shape)
+    image, label = image.squeeze(0).cpu().detach().numpy(), label.squeeze(0).cpu().detach().numpy() #squeeze(0)removes the first dimension (batch dimension).
     if len(image.shape) == 3:
         prediction = np.zeros_like(label)
-        # print("标签形状1：",prediction.shape)
         for ind in range(image.shape[0]):
             slice = image[ind, :, :]
             x, y = slice.shape[0], slice.shape[1]
             if x != patch_size[0] or y != patch_size[1]:
                 slice = zoom(slice, (patch_size[0] / x, patch_size[1] / y), order=3)  # previous using 0
-            # ***********************************
             x_transforms = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize([0.5], [0.5])
             ])
             input = x_transforms(slice).unsqueeze(0).float().cuda()
-            # input = torch.from_numpy(slice).unsqueeze(0).unsqueeze(0).float().cuda()
-            # ***********************************
-            # print("评估前维度1：", input.shape)
             net.eval()
             with torch.no_grad():
                 outputs = net(input)
                 # outputs = F.interpolate(outputs, size=slice.shape[:], mode='bilinear', align_corners=False)
                 out = torch.argmax(torch.softmax(outputs, dim=1), dim=1).squeeze(0)
                 out = out.cpu().detach().numpy()
-                # print("if 分支里面out.shape",out.shape)
                 if x != patch_size[0] or y != patch_size[1]:
                     pred = zoom(out, (x / patch_size[0], y / patch_size[1]), order=0)
                 else:
                     pred = out
-                # print("pred.shape", pred.shape)
                 prediction[ind] = pred
     else:
-        # *************************************************
-        # print("标签形状2：",prediction.shape)
         assert len(image.shape) == 2, "Input image must be 2D if not 3D."
-        x, y = image.shape[:2]  # 获取原始图像的宽度和高度
-        # print("patch_size:",patch_size[0])
-        # 调整图像大小以匹配 patch_size
+        x, y = image.shape[:2]  
         if x != patch_size[0] or y != patch_size[1]:
             image_resized = zoom(image, (patch_size[0] / x, patch_size[1] / y), order=3)
         else:
             image_resized = image
-        # *************************************************
         input = torch.from_numpy(image_resized).unsqueeze(
-            0).unsqueeze(0).float().cuda()  # 插入两个维度  （512，512）变为 (1, 1, 512, 512)
-        # print("评估前维度2：",input.shape)
+            0).unsqueeze(0).float().cuda()  
         net.eval()
         with torch.no_grad():
             out = torch.argmax(torch.softmax(net(input), dim=1), dim=1).squeeze(0)
-            # print("else 分支里面out.shape", out.shape)
             prediction = out.cpu().detach().numpy()
-            # print("prediction.shape", prediction.shape)
 
     metric_list = []
     for i in range(1, classes):

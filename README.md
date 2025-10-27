@@ -24,7 +24,8 @@ This novel synergy achieves a superior accuracy-efficiency balance, exemplified 
 - Rectal Cancer Segmentation Dataset (https://github.com/zf617707527/Unet1/tree/master/data1)
   - This study utilized the dataset from Problem B of the 2019 (7th) Teddy Cup Data Mining Challenge. The dataset contains Computed Tomography (CT) imaging data from 107 rectal cancer patients. Each patient case includes multiple slice images. We strictly excluded all negative samples to ensure data completeness and usability. This selection process guarantees that each retained CT image has detailed annotation information. After screening, the final dataset contains 860 CT images. We allocated 86 images for final testing. The remaining images use a nine-fold cross-validation method: 688 for training and 86 for validation. This method ensures both model accuracy and generalization ability.
 ## 4. Code Information
-To apply the model on Synapse dataset, the data tree should be constructed as:
+Extract the files from https://drive.google.com/file/d/15Twkxj1Rv9J8YLCvXVBtRDPn8XAUVNWK/view?usp=sharing, place the biformer_base_best.pth in the /synapse_train_test/pretrained_ckpt folder, download the corresponding dataset, and place it according to the following instructions. The synapse_84.00.pth file is the best model file from the Synapse dataset and should be placed in the /synapse_train_test/save_models folder.
+- To apply the model on Synapse dataset, the data tree should be constructed as:
 ``` 
     ├── data
           ├── Synapse
@@ -37,7 +38,7 @@ To apply the model on Synapse dataset, the data tree should be constructed as:
                       ├── image_2.npz
                       ├── image_n.npz
 ```
-To apply the model on other datasets, the data tree should be constructed as:
+- To apply the model on other datasets, the data tree should be constructed as:
 ``` 
     ├── data
           ├── images

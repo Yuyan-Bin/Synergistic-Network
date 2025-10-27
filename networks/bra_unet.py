@@ -12,8 +12,7 @@ import torch
 import torch.nn as nn
 from networks.bra_unet_system import BRAUnetSystem
 logger = logging.getLogger(__name__)
-class BRAUnet(nn.Module):
-    # def __init__(self, img_size=256, in_chans=3, num_classes=1, n_win=8):
+class BRAUnet(nn.Module):、
     def __init__(self, img_size=256, in_chans=3, num_classes=1, n_win=8):
         super(BRAUnet, self).__init__()
         self.bra_unet = BRAUnetSystem(img_size=img_size,
@@ -21,21 +20,15 @@ class BRAUnet(nn.Module):
                                       num_classes=num_classes,
                                       head_dim=32,
                                       n_win=n_win,
-                                      embed_dim=[96, 192, 384, 768], #base版本
-                                      # depth=[2, 2, 8, 2], #原论文结构
-                                      depth=[2, 2, 2, 2], #自己模型结构
+                                      embed_dim=[96, 192, 384, 768], 
+                                      depth=[2, 2, 2, 2], 
                                       depths_decoder=[2, 8, 2, 2],
-                                      # depths_decoder=[2, 6, 2, 2],
-                                      # depths_decoder=[2, 6, 2, 2],
                                       mlp_ratios=[3, 3, 3, 3],
                                       drop_path_rate=0.2,
                                       topks=[2, 4, 8, -2],
-                                      # topks=[4, 8, 16, -2],
                                       qk_dims=[96, 192, 384, 768])
-                                      # qk_dims=[64, 128, 256, 512])
 
     def forward(self, x):
-        # print("初始输入：",x.shape)
         if x.size()[1] == 1:
             x = x.repeat(1, 3, 1, 1)
         logits = self.bra_unet(x)

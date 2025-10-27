@@ -163,18 +163,17 @@ class nchwAttentionLePE(nn.Module):
         return output
 
 
-class Mlp(nn.Module):  # 搭建前馈神经网络
+class Mlp(nn.Module):  
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = nn.Linear(in_features, hidden_features)  # 第一层全连接层
-        self.act = act_layer()  # 使用nn.GELU作为激活函数
-        self.fc2 = nn.Linear(hidden_features, out_features)  # 第二层全连接层
-        self.drop = nn.Dropout(drop)  # 使用概率drop=0.失活
+        self.fc1 = nn.Linear(in_features, hidden_features) 
+        self.act = act_layer() 
+        self.fc2 = nn.Linear(hidden_features, out_features)  
+        self.drop = nn.Dropout(drop) 
 
-    def forward(self, x):  # 前向传播，输入数据x
-
+    def forward(self, x):  
         x = self.fc1(x)
         x = self.act(x)
         x = self.drop(x)
@@ -193,7 +192,6 @@ class Block(nn.Module):
         # modules
         if before_attn_dwconv > 0:
             self.pos_embed = nn.Conv2d(dim, dim, kernel_size=before_attn_dwconv, padding=1, groups=dim)
-            # self.pos_embed = InceptionNeXtBlock(dim)
         else:
             self.pos_embed = lambda x: 0
         self.norm1 = nn.LayerNorm(dim, eps=1e-6)  # important to avoid attention collapsing
@@ -208,7 +206,7 @@ class Block(nn.Module):
                                                 side_dwconv=side_dwconv,
                                                 auto_pad=auto_pad)
 
-            # ******************************************************************************************************************
+           
         elif topk == -1:
             self.attn = Attention(dim=dim)
         elif topk == -2:
@@ -245,9 +243,6 @@ class Block(nn.Module):
         """
         x: NCHW tensor
         """
-        # **************************************
-        # print("输入：",x.shape)
-        # **************************************
         H, W = self.input_resolution
         #
         B, L, C = x.shape
@@ -260,7 +255,6 @@ class Block(nn.Module):
         # conv pos embedding
         x = x + self.pos_embed(x)
         # permute to NHWC tensor for attention & mlp
-        # print("Block中：",x.shape)
         x = x.permute(0, 2, 3, 1)  # (N, C, H, W) -> (N, H, W, C)
 
 
@@ -268,10 +262,8 @@ class Block(nn.Module):
         if self.pre_norm:
             if self.use_layer_scale:
                 x = x + self.drop_path(self.gamma1 * self.attn(self.norm1(x)))  # (N, H, W, C)
-                # x = x + self.drop_path(self.gamma1 * self.attn(self.norm1(x),H, W, relative_pos_index, relative_coords_table))  # (N, H, W, C)
                 x = x + self.drop_path(self.gamma2 * self.WF(self.norm2(x)))  # (N, H, W, C)
             else:
-                # print("x.shape:",x.shape)
                 x = x + self.drop_path(self.attn(self.norm1(x)))  # (N, H, W, C)
                 x = x + self.drop_path(self.mlp(self.norm2(x)))  # (N, H, W, C)
         else:  # https://kexue.fm/archives/9009
@@ -281,7 +273,6 @@ class Block(nn.Module):
 
             else:
                 x = self.norm1(x + self.drop_path(self.attn(x)))  # (N, H, W, C)
-                # x = self.norm1(x + self.drop_path(self.attn(x), H, W, relative_pos_index, relative_coords_table))  # (N, H, W, C)
                 x = self.norm2(x + self.drop_path(self.WF(x)))  # (N, H, W, C)
 
 

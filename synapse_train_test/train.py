@@ -35,36 +35,22 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--root_path",
     type=str,
-    # ****************更改**********************************************************
-    # default="/home/cqut/Data/medical_seg_data/Synapse_zheng/train_npz",
-    # default="/tmp/pycharm_project_771/synapse_train_test/data/Synapse/train_npz",
     default="/tmp/pycharm_project_794/BRAU-Netplusplus-master/synapse_train_test/data/Synapse/train_npz",
     help="root dir for train data",
 )
 parser.add_argument(
     "--test_path",
     type=str,
-    # default="/home/cqut/Data/medical_seg_data/Synapse_zheng/test_vol_h5",
-    # default="/tmp/pycharm_project_771/synapse_train_test/data/Synapse/test_vol_h5",
     default="/tmp/pycharm_project_794/BRAU-Netplusplus-master/synapse_train_test/data/Synapse/test_vol_h5",
     help="root dir for test data",
 )
 parser.add_argument("--dataset", type=str, default="Synapse", help="experiment_name")
 parser.add_argument("--list_dir", type=str, default="./lists/lists_Synapse", help="list dir")
 parser.add_argument("--num_classes", type=int, default=9, help="output channel of network")
-# parser.add_argument("--output_dir", type=str, default="./save_models", help="output dir")
 parser.add_argument("--output_dir", type=str, default="./save_models", help="output dir")
-# ******************************************早停策略************************************************************************
 parser.add_argument("--max_iterations", type=int, default=90000, help="maximum epoch number to train")
-# parser.add_argument("--max_iterations", type=int, default=40000, help="maximum epoch number to train")
-# ***************************************************************************0************************************************
-# parser.add_argument("--max_epochs", type=int, default=400, help="maximum epoch number to train")
 parser.add_argument("--max_epochs", type=int, default=300, help="maximum epoch number to train")
-# parser.add_argument("--max_epochs", type=int, default=280, help="maximum epoch number to train")
-# parser.add_argument("--batch_size", type=int, default=24, help="batch_size per gpu")
 parser.add_argument("--batch_size", type=int, default=24, help="batch_size per gpu")
-# parser.add_argument("--num_workers", type=int, default=8, help="num_workers")
-# parser.add_argument("--num_workers", type=int, default=4, help="num_workers")
 parser.add_argument("--num_workers", type=int, default=2, help="num_workers")
 parser.add_argument("--eval_interval", type=int, default=50, help="eval_interval")
 parser.add_argument("--model_name", type=str, default="synapse", help="model_name")
@@ -72,7 +58,6 @@ parser.add_argument("--n_gpu", type=int, default=1, help="total gpu")
 parser.add_argument("--deterministic", type=int, default=1, help="whether to use deterministic training")
 parser.add_argument("--base_lr", type=float, default=0.001, help="segmentation network base learning rate")
 parser.add_argument("--img_size", type=int, default=224, help="input patch size of network input")
-# parser.add_argument("--img_size", type=int, default=256, help="input patch size of network input")
 parser.add_argument("--z_spacing", type=int, default=1, help="z_spacing")
 parser.add_argument("--seed", type=int, default=1234, help="random seed")
 parser.add_argument("--zip", action="store_true", help="use zipped dataset instead of folder dataset")
@@ -106,16 +91,14 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-# ****************************************************************************************
 def cal_params_flops(model, size):
     input = torch.randn(1, 3, size, size).cuda()
     flops, params = profile(model, inputs=(input,))
-    print('flops',flops/1e9)            ## 打印计算量
-    print('params',params/1e6)            ## 打印参数量
+    print('flops',flops/1e9)           
+    print('params',params/1e6)            
 
     total = sum(p.numel() for p in model.parameters())
     print("Total params: %.2fM" % (total/1e6))
-    # 返回 FLOPs 和参数数量
     return flops, params, total
 
 
@@ -124,10 +107,8 @@ if __name__ == "__main__":
     # transformer = locate(args.module)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
-# ***********************************************************************************************************
     new_directory = "/tmp/pycharm_project_794/BRAU-Netplusplus-master/synapse_train_test"
 
-    # 尝试切换目录
     try:
         os.chdir(new_directory)
         print(f"Changed working directory to: {os.getcwd()}")
@@ -135,8 +116,6 @@ if __name__ == "__main__":
         print(f"Error: The directory '{new_directory}' does not exist.")
     except PermissionError:
         print(f"Error: Permission denied to change to directory '{new_directory}'.")
-# *********************************************************************************************************
-# *********************************************************************************************************
     if not args.deterministic:
         cudnn.benchmark = True
         cudnn.deterministic = False
@@ -166,10 +145,8 @@ if __name__ == "__main__":
     args.list_dir = dataset_config[dataset_name]["list_dir"]
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    net = BRAUnet(img_size=224,in_chans=3, num_classes=9, n_win=7) #base版本
+    net = BRAUnet(img_size=224,in_chans=3, num_classes=9, n_win=7) 
 
-    # 检查编码器和瓶颈部分
-    print("\n=== 编码器和瓶颈部分 ===")
     print("Downsample layers:")
     for i, layer in enumerate(model.bra_unet.downsample_layers):
         print(f"  Layer {i}: {layer}")
@@ -177,24 +154,16 @@ if __name__ == "__main__":
     print("\nStages:")
     for i, stage in enumerate(model.bra_unet.stages):
         print(f"  Stage {i}: {len(stage)} blocks")
-        # 打印第一个块的结构
         if len(stage) > 0:
             print(f"    First block: {stage[0].__class__.__name__}")
 
-    # 特别关注最后一个下采样层（瓶颈前的层）
-    print("\n=== 瓶颈相关层 ===")
     print("Last downsample layer (before bottleneck):")
     print(model.bra_unet.downsample_layers[-1])
     net.load_from()
-    # ********************************************
     if torch.cuda.is_available():
         model_ft = net.cuda()
-    # # *******************************************************************************************
-    # 计算参数数量
-    # 创建输入数据，并确保它也在GPU上
     input = torch.randn(1, 3, 224, 224).to('cuda')
     print(cal_params_flops(net, 224))
-    # # *******************************************************************************************
     trainer = {
         "Synapse": trainer_synapse,
     }

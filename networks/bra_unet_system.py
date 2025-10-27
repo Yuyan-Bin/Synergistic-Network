@@ -6,7 +6,7 @@ import torch.nn as nn
 from timm.models.layers import trunc_normal_
 
 
-from networks.vssd import Block  #编码器为vssd
+from networks.vssd import Block  #The encoder is VSSD.
 from einops import rearrange
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
 # from fairscale.nn.checkpoint import checkpoint_wrapper
@@ -183,10 +183,8 @@ class BRAUnetSystem(nn.Module):
                  head_dim=64, qk_scale=None, representation_size=None,fixed_pool_size=None,sr_ratios=[8, 4, 2, 1],
                  drop_path_rate=0.,
                  use_checkpoint_stages=[],
-                 norm_layer=nn.LayerNorm,   # 深度的长度，代表网络的层数
-                 # ******************************************************
+                 norm_layer=nn.LayerNorm,  
                  pretrain_size=224,  # img_size
-                 # ******************************************************
                  ########
                  n_win=7,
                  kv_downsample_mode='identity',
@@ -242,8 +240,8 @@ class BRAUnetSystem(nn.Module):
 
         self.stages = nn.ModuleList() # 4 feature resolution stages, each consisting of multiple residual blocks
         nheads = [dim // head_dim for dim in qk_dims]
-        dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depth))]    # 定义DropPath率
-        cur = 0     # cur变量跟踪当前的层索引
+        dp_rates = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depth))]    # Define the DropPath rate
+        cur = 0   
         for i in range(4):
             stage = nn.Sequential(
                 *[Block(dim=embed_dim[i],
@@ -275,8 +273,8 @@ class BRAUnetSystem(nn.Module):
                 stage = checkpoint_wrapper(stage)
             self.stages.append(stage)
             cur += depth[i]
-        self.layers_up = nn.ModuleList()    # 上采样路径
-        self.concat_back_dim = nn.ModuleList()  # 用于合并跳跃连接的线性层
+        self.layers_up = nn.ModuleList()   
+        self.concat_back_dim = nn.ModuleList() 
         for i_layer in range(self.num_layers):
             concat_linear = nn.Linear(2*embed_dim[self.num_layers - 1 - i_layer],
                                       embed_dim[self.num_layers - 1 - i_layer]) if i_layer > 0 else nn.Identity()
@@ -334,12 +332,10 @@ class BRAUnetSystem(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def forward_features(self, x):
-        # print("输入x：",x.shape)
         x_downsample = []
         for i in range(3):
             x = self.downsample_layers[i](x) # res = (56, 28, 14, 7), wins = (64, 16, 4, 1)
             x = x.flatten(2).transpose(1, 2)
-            # print("传入stage:",x.shape)
             x = self.stages[i](x)
             x_downsample.append(x)
             B, L, C = x.shape
@@ -392,7 +388,6 @@ class BRAUnetSystem(nn.Module):
             x = self.output(x)
         return x
     def forward(self, x):
-        # print("输入forword:",x.shape)
         x, x_downsample = self.forward_features(x)
         x = self.forward_up_features(x, x_downsample)
         x = self.up_x4(x)

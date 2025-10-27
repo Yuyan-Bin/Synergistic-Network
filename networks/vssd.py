@@ -353,12 +353,6 @@ class Block(nn.Module):
         if kwargs.get('attn_type', 'mamba2') == 'standard':
             self.attn = StandardAttention(dim=dim, heads=num_heads, dim_head=dim // num_heads, dropout=drop)
         elif kwargs.get('attn_type', 'mamba2') == 'mamba2':
-            # print("****************************************************")
-            # print("传入mamba2的headdim：",dim*ssd_expansion // num_heads)
-            # print("dim:",dim)
-            # print("ssd_expansion:",ssd_expansion)
-            # print("num_heads:",num_heads)
-            # print("*****************************************************")
             self.attn = Mamba2(d_model=dim, expand=ssd_expansion, headdim= dim*ssd_expansion // num_heads,
                                 ngroups=ssd_ngroups, chunk_size=ssd_chunk_size,
                                 linear_attn_duality=linear_attn_duality, d_state=d_state, **kwargs)
@@ -369,12 +363,7 @@ class Block(nn.Module):
         self.mlp = Mlp(in_features=dim, hidden_features=int(dim * mlp_ratio), act_layer=act_layer, drop=drop)
 
     def forward(self, x, H=None, W=None):
-        # print("vssd中输入x:",x.shape)
         B, L, C = x.shape
-        # if H & W is None:
-        #     H, W = self.input_resolution
-        #     assert L == H * W, "input feature has wrong size"
-        # print("input_resolution:",self.input_resolution)
         if H is None and W is None:
             H, W = self.input_resolution
             assert L == H * W, "input feature has wrong size"

@@ -1,6 +1,5 @@
 import logging
 import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 from datetime import datetime
 
 import pytz
@@ -14,16 +13,11 @@ plt = platform.system()
 if plt != 'Windows':
   pathlib.WindowsPath = pathlib.PosixPath
 import matplotlib.pyplot as plt
-# # **********************************************
-# import matplotlib
-# matplotlib.use('TkAgg')
-# # *********************************************
 from torch.autograd import Variable
 from torch import optim
 import random
 import time
 import albumentations as A
-# from albumentations.pytorch import ToTensor
 from albumentations.pytorch.transforms import ToTensor
 from torch.utils.data import random_split
 from torch.optim import lr_scheduler
@@ -32,22 +26,18 @@ import pandas as pd
 import argparse
 import os
 from loader import  binary_class
-# from loader import  binary_class2
 from sklearn.model_selection import GroupKFold
 from loss import *
-# from synapse_train_test.networks.bra_unet import BRAUnet
 from networks.bra_unet import BRAUnet
 
-# **********************************************************************
 def cal_params_flops(model, size):
     input = torch.randn(1, 3, size, size).cuda()
     flops, params = profile(model, inputs=(input,))
-    print('flops',flops/1e9)            ## 打印计算量
-    print('params',params/1e6)            ## 打印参数量
+    print('flops',flops/1e9)            
+    print('params',params/1e6)         
 
     total = sum(p.numel() for p in model.parameters())
     print("Total params: %.2fM" % (total/1e6))
-    # 返回 FLOPs 和参数数量
     return flops, params, total
 def setup_logging(log_file):
     logging.basicConfig(
@@ -60,7 +50,6 @@ def setup_logging(log_file):
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
-# **********************************************************************
 def get_train_transform():
     return A.Compose(
         [
@@ -93,12 +82,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=5):
     best_loss = float('inf')
     counter = 0
 
-    # ***********************************************************************************
-
     current_time = datetime.now()
     formatted_time = current_time.strftime('%Y%m%d_%H%M')
-
-    # ************************************************************************************
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
         print('-' * 10)
@@ -115,14 +100,12 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=5):
             running_corrects = []
 
             # Iterate over data
-            # for inputs,labels,label_for_ce,image_id in dataloaders[phase]:
             for inputs, labels, image_id in dataloaders[phase]:
                 # wrap them in Variable
                 if torch.cuda.is_available():
 
                     inputs = Variable(inputs.cuda())
                     labels = Variable(labels.cuda())
-                    # label_for_ce = Variable(label_for_ce.cuda())
                 else:
                     inputs, labels = Variable(inputs), Variable(labels)
 
@@ -150,16 +133,13 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=5):
             Accuracy_list[phase].append(epoch_acc)
             # save parameters
             if phase == 'valid' and epoch_loss <= best_loss:
-                # ************************************************************************
                 logging.info(
                     'Epoch [{}/{}] - Validation Loss: {:.4f}, IoU: {:.4f}'.format(epoch, num_epochs - 1, epoch_loss,
                                                                                   epoch_acc))
-                # ************************************************************************
                 best_loss = epoch_loss
                 best_model_wts = model.state_dict()
                 counter = 0
                 if epoch > 0:
-                    # torch.save(model.state_dict(), f'save_models/epoch_{epoch}_{epoch_acc}_.pth')
                     torch.save(model.state_dict(), f'save_models/epoch_{epoch}_bs_{args.batch}_{formatted_time}_acc_{epoch_acc}_.pth')
             elif phase == 'valid' and epoch_loss > best_loss:
                 counter += 1
@@ -177,10 +157,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=5):
 
 
 if __name__ == '__main__':
-    # *************************************
     log_file = 'training_log.txt'
     setup_logging(log_file)
-    # *************************************
     seed = 1234
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -193,18 +171,12 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--dataset', type=str, default='/home/cqut/Data/medical_seg_data/ISIC2018_jpg/', help='the path of images')
     parser.add_argument('--dataset', type=str, default='/tmp/pycharm_project_794/BRAU-Netplusplus-master/isic_cvc_train_test/data', help='the path of images')
-    # parser.add_argument('--csvfile', type=str, default='src/test_train_data.csv',
-    #                     help='two columns [image_id,category(train/test)]rrf')
     parser.add_argument('--csvfile', type=str, default='/tmp/pycharm_project_794/BRAU-Netplusplus-master/isic_cvc_train_test/test_train_data.csv',
                         help='two columns [image_id,category(train/test)]')
     parser.add_argument('--loss', default='dice', help='loss type')
-    # parser.add_argument('--batch', type=int, default=8, help='batch size')
     parser.add_argument('--batch', type=int, default=42, help='batch size')
     parser.add_argument('--lr', type=float, default=0.0005, help='learning rate')
-    # parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
-    # parser.add_argument('--epoch', type=int, default=200, help='epoches')
     parser.add_argument('--epoch', type=int, default=200, help='epoches')
     args = parser.parse_args()
 
@@ -213,7 +185,6 @@ if __name__ == '__main__':
     df = pd.read_csv(args.csvfile)
     df = df[df.category == 'train']
     df.reset_index(drop=True, inplace=True)
-    # gkf = GroupKFold(n_splits=5)
     gkf = GroupKFold(n_splits=5)
     df['fold'] = -1
     for fold, (train_idx, val_idx) in enumerate(gkf.split(df, groups=df.image_id.tolist())):
@@ -230,9 +201,6 @@ if __name__ == '__main__':
     train_dataset = binary_class(args.dataset, train_files, get_train_transform())
     val_dataset = binary_class(args.dataset, val_files, get_valid_transform())
 
-    # train_dataset = binary_class2(args.dataset, train_files, get_train_transform())
-    # val_dataset = binary_class2(args.dataset, val_files, get_valid_transform())
-
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=args.batch, shuffle=True,
                                                drop_last=True,num_workers=8)
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset, batch_size=args.batch//4, drop_last=True,num_workers=8)
@@ -240,15 +208,10 @@ if __name__ == '__main__':
     dataloaders = {'train': train_loader, 'valid': val_loader}
     model_ft = BRAUnet(img_size=256,in_chans=3, num_classes=1, n_win=8)
     model_ft.load_from()
-    # # **************************************************
     if torch.cuda.is_available():
         model_ft = model_ft.cuda()
-    # 计算参数数量
-    # # 创建输入数据，并确保它也在GPU上
     input = torch.randn(1, 3, 256, 256).to('cuda')
-    # 现在调用计算参数和浮点运算次数的函数
     print(cal_params_flops(model_ft, 256))
-    # # **************************************************
     if torch.cuda.is_available():
         model_ft = model_ft.cuda()
 
@@ -259,19 +222,13 @@ if __name__ == '__main__':
         criterion = DiceLoss_binary()
     accuracy_metric = IoU_binary()
     optimizer_ft = optim.Adam(model_ft.parameters(), lr=args.lr)
-    # optimizer_ft = optim.AdamW(model_ft.parameters(), lr=args.lr)
     exp_lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer_ft, 200, eta_min=0, last_epoch=-1, verbose=False)
-    # exp_lr_scheduler = lr_scheduler.CosineAnnealingWarmRestarts(optimizer_ft, 200, eta_min=0, last_epoch=-1, verbose=False)
     model_ft, Loss_list, Accuracy_list = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                                                     num_epochs=args.epoch)
-    # ***********************************************                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ************************************
+                                                     num_epochs=args.epoch)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ************************************
 
     current_time = datetime.now()
     formatted_time = current_time.strftime('%Y%m%d_%H%M')
-    # ************************************************************************************
     torch.save(model_ft.state_dict(), f'save_models/epoch_last_{formatted_time}.pth')
-    # ****************************************************************************
-    # 绘制损失曲线图
     epochs = range(1, args.epoch + 1)
     plt.figure(figsize=(12, 6))
 
